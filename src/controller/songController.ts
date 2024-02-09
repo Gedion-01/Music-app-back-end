@@ -28,7 +28,7 @@ export const createSong = async (
       genre: genre,
       coverImageUrl: coverImageUrl,
     });
-    
+
     await song.save();
 
     res.status(200).json({ message: "Song created Successfully" });
@@ -68,11 +68,9 @@ export const updateSong = async (
     }: { songid: string } & SongRequestBody = req.body;
     const song = await Song.where("_id").equals(songid).exec();
     if (song.length < 1) {
-      res
-        .status(404)
-        .json({
-          message: "Can't update the song because the song is not found",
-        });
+      res.status(404).json({
+        message: "Can't update the song because the song is not found",
+      });
       return;
     }
     song[0].title = title;
@@ -110,6 +108,32 @@ export const removeSong = async (
     return;
   } catch (error) {
     console.error("Error while trying to remove the song:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const songsByGenre = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.params) {
+      res
+        .status(400)
+        .json({ error: "Request parameter parameter is missing or empty" });
+      return;
+    }
+    const { genre }: { genre?: string } = req.params;
+
+    const songsByGenre = await Song.find({ genre: genre }).exec();
+    if (songsByGenre.length === 0) {
+      res.status(404).json({ message: "Song not found" });
+      return;
+    }
+    res.status(200).json({ message: "Songs found", songs: songsByGenre });
+    return;
+  } catch (error) {
+    console.error("Error while trying to find songs by genre:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

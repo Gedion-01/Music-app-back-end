@@ -137,3 +137,24 @@ export const songsByGenre = async (
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const searchSongById = async (req: Request, res: Response) => {
+  try {
+    if (!req.params) {
+      res
+        .status(400)
+        .json({ error: "Request parameter is missing or empty" });
+      return;
+    }
+    const { id }: { id?: string } = req.params;
+    const searchedSong = await Song.findById(id);
+    if (!searchedSong) {
+      res.status(404).json({ message: "Song not found" });
+      return;
+    }
+    res.status(200).json({ message: "Song found", songs: searchedSong });
+  } catch (error) {
+    console.error("Error while trying to find songs by genre:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

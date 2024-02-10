@@ -26,6 +26,10 @@ const SongSchema: Schema<Song> = new mongoose.Schema({
     default: () => Date.now()
    }
 })
+SongSchema.pre('save', function(next) {
+    this.updatedAt = new Date();
+    next();
+});
 
 const Song = mongoose.model('Songs', SongSchema)
 

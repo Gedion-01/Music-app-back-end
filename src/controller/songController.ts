@@ -104,7 +104,9 @@ export const removeSong = async (
       res.status(404).json({ message: "Song not found" });
       return;
     }
-    res.status(200).json({ message: "song removed successfully" });
+    //console.log(deleteSong);
+    
+    res.status(200).json({ message: "song removed successfully", removedSong: deleteSong });
     return;
   } catch (error) {
     console.error("Error while trying to remove the song:", error);
@@ -152,7 +154,7 @@ export const searchSongById = async (req: Request, res: Response) => {
       res.status(404).json({ message: "Song not found" });
       return;
     }
-    res.status(200).json({ message: "Song found", songs: searchedSong });
+    res.status(200).json({ message: "Song found", song: searchedSong });
   } catch (error) {
     console.error("Error while trying to find songs by genre:", error);
     res.status(500).json({ error: "Internal Server Error" });

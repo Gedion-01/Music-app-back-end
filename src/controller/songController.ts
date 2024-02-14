@@ -1,38 +1,68 @@
 import { Request, Response } from "express";
 import Song from "../models/songSchema";
+import { fileUpload } from "../common/firebase/fileUpload";
+import { Multer } from 'multer';
 
 interface SongRequestBody {
   title: string;
   artist: string;
   album?: string;
   genre: string;
-  coverImageUrl: string;
 }
 
-export const createSong = async (
+const createSong = async (formInput: SongRequestBody, imageUrl: string, audioUrl: string) => {
+  const {title, artist, album, genre} = formInput
+  try {
+  const song = new Song({
+    title: title,
+    artist: artist,
+    album: album,
+    genre: genre,
+    coverImageUrl: imageUrl,
+    songDataUrl:  audioUrl
+  });
+  await song.save();
+} catch(error) {
+  console.log(error);
+}
+}
+// Define a custom type for the files object
+
+interface MulterFileObject {
+  [fieldname: string]: Express.Multer.File[];
+}
+
+export const uploadSong = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  console.log("her");
+  console.log(req.files)
   try {
     if (!req.body) {
       res.status(400).json({ error: "Request body is missing or empty" });
       return;
     }
 
-    const { title, artist, album, genre, coverImageUrl }: SongRequestBody =
-      req.body;
-    const song = new Song({
-      title: title,
-      artist: artist,
-      album: album,
-      genre: genre,
-      coverImageUrl: coverImageUrl,
-    });
+    const files: any = req.files;
+    if (!files || !files["image"] || !files["audio"]) {
+      res.status(400).json({ error: "Image or audio file not provided" });
+      return;
+    }
 
-    await song.save();
+    const imageFile = files["image"][0];
+    const audioFile = files["audio"][0];
+    const formInput = req.body;
 
-    res.status(200).json({ message: "Song created Successfully" });
-    return;
+    const uploadResult = await fileUpload(imageFile, audioFile);
+    if (!uploadResult) {
+      res.status(500).json({ error: "File upload failed" });
+      return;
+    }
+
+    const { message, imageUrl, audioUrl } = uploadResult;
+    await createSong(formInput, imageUrl, audioUrl);
+    res.status(200).json({ status: "Song created Successfully", message });
   } catch (error) {
     console.error("Error creating song:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -64,7 +94,6 @@ export const updateSong = async (
       artist,
       album,
       genre,
-      coverImageUrl,
     }: { songid: string } & SongRequestBody = req.body;
     const song = await Song.where("_id").equals(songid).exec();
     if (song.length < 1) {
@@ -77,7 +106,6 @@ export const updateSong = async (
     song[0].artist = artist;
     song[0].album = album;
     song[0].genre = genre;
-    song[0].coverImageUrl = coverImageUrl;
 
     await song[0].save();
     res.status(200).json({ message: "Song updated Successfully" });

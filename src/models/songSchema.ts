@@ -8,6 +8,7 @@ interface Song {
     coverImageUrl: string;
     createdAt: Date;
     updatedAt: Date;
+    songDataUrl: string 
 }
 
 const SongSchema: Schema<Song> = new mongoose.Schema({
@@ -24,7 +25,8 @@ const SongSchema: Schema<Song> = new mongoose.Schema({
    updatedAt: {
     type: Date,
     default: () => Date.now()
-   }
+   },
+   songDataUrl: {type: String, required: true}
 })
 SongSchema.pre('save', function(next) {
     this.updatedAt = new Date();

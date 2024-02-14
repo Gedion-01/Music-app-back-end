@@ -1,48 +1,48 @@
 import { Request, Response } from "express";
 import Song from "../models/songSchema";
 import { fileUpload } from "../common/firebase/fileUpload";
-import { Multer } from 'multer';
+import { Multer } from "multer";
 
 interface SongRequestBody {
   title: string;
   artist: string;
   album?: string;
   genre: string;
+  [key: string]: string | undefined;
 }
 
-const createSong = async (formInput: SongRequestBody, imageUrl: string, audioUrl: string) => {
-  const {title, artist, album, genre} = formInput
+const createSong = async (
+  formInput: SongRequestBody,
+  imageUrl: string,
+  audioUrl: string
+) => {
+  const { title, artist, album, genre } = formInput;
   try {
-  const song = new Song({
-    title: title,
-    artist: artist,
-    album: album,
-    genre: genre,
-    coverImageUrl: imageUrl,
-    songDataUrl:  audioUrl
-  });
-  await song.save();
-} catch(error) {
-  console.log(error);
-}
-}
-// Define a custom type for the files object
-
-interface MulterFileObject {
-  [fieldname: string]: Express.Multer.File[];
-}
+    const song = new Song({
+      title: title,
+      artist: artist,
+      album: album,
+      genre: genre,
+      coverImageUrl: imageUrl,
+      songDataUrl: audioUrl,
+    });
+    await song.save();
+    return song
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export const uploadSong = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  console.log("her");
-  console.log(req.files)
   try {
     if (!req.body) {
       res.status(400).json({ error: "Request body is missing or empty" });
       return;
     }
+    console.log(req.body);
 
     const files: any = req.files;
     if (!files || !files["image"] || !files["audio"]) {
@@ -52,7 +52,14 @@ export const uploadSong = async (
 
     const imageFile = files["image"][0];
     const audioFile = files["audio"][0];
-    const formInput = req.body;
+    const formInput: SongRequestBody = req.body;
+    const allValuesPresent = Object.keys(formInput).every((key) => {
+      const value = formInput[key];
+      return value !== null && value !== undefined && value !== "";
+    });
+    if (!allValuesPresent) {
+      res.status(400).json({message: "Some properties in req.body are missing values."});
+    }
 
     const uploadResult = await fileUpload(imageFile, audioFile);
     if (!uploadResult) {
@@ -61,8 +68,9 @@ export const uploadSong = async (
     }
 
     const { message, imageUrl, audioUrl } = uploadResult;
-    await createSong(formInput, imageUrl, audioUrl);
-    res.status(200).json({ status: "Song created Successfully", message });
+    const createdSong = await createSong(formInput, imageUrl, audioUrl);
+
+    res.status(200).json({ status: "Song created Successfully", message, createdSong});
   } catch (error) {
     console.error("Error creating song:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -133,8 +141,10 @@ export const removeSong = async (
       return;
     }
     //console.log(deleteSong);
-    
-    res.status(200).json({ message: "song removed successfully", removedSong: deleteSong });
+
+    res
+      .status(200)
+      .json({ message: "song removed successfully", removedSong: deleteSong });
     return;
   } catch (error) {
     console.error("Error while trying to remove the song:", error);
@@ -171,9 +181,7 @@ export const songsByGenre = async (
 export const searchSongById = async (req: Request, res: Response) => {
   try {
     if (!req.params) {
-      res
-        .status(400)
-        .json({ error: "Request parameter is missing or empty" });
+      res.status(400).json({ error: "Request parameter is missing or empty" });
       return;
     }
     const { id }: { id?: string } = req.params;

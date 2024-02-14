@@ -14,11 +14,13 @@ initializeApp(firebaseConfig);
 const storage = getStorage();
 
 export const fileUpload = async (imageFile: any, audioFile: any) => {
+  console.log(imageFile, audioFile)
   try {
     const imageStorageRef = ref(storage, `images/${imageFile.originalname}`);
     const imageMetaData = {
       contentType: imageFile.mimetype,
     };
+    console.log(imageMetaData)
     const imageSnapShot = await uploadBytesResumable(
       imageStorageRef,
       imageFile.buffer,
@@ -27,10 +29,11 @@ export const fileUpload = async (imageFile: any, audioFile: any) => {
     const imageDownloadUrl = await getDownloadURL(imageSnapShot.ref);
 
     // now upload audio
-    const audioStorageRef = ref(storage, `musics/${audioFile.ref}`);
+    const audioStorageRef = ref(storage, `musics/${audioFile.originalname}`);
     const audioMetaData = {
       contentType: audioFile.mimetype,
     };
+    console.log(audioMetaData)
     const audioSnapShot = await uploadBytesResumable(
       audioStorageRef,
       audioFile.buffer,

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Song from "../models/songSchema";
 import { fileUpload } from "../common/firebase/fileUpload";
 import { Multer } from "multer";
+import { deleteFileFromStorageByUrl } from "../common/firebase/deleteFileFormStorageByUrl";
 
 interface SongRequestBody {
   title: string;
@@ -17,6 +18,7 @@ const createSong = async (
   audioUrl: string
 ) => {
   const { title, artist, album, genre } = formInput;
+  console.log(formInput)
   try {
     const song = new Song({
       title: title,
@@ -38,6 +40,7 @@ export const uploadSong = async (
   res: Response
 ): Promise<void> => {
   try {
+    console.log('here')
     if (!req.body) {
       res.status(400).json({ error: "Request body is missing or empty" });
       return;
@@ -59,6 +62,7 @@ export const uploadSong = async (
     });
     if (!allValuesPresent) {
       res.status(400).json({message: "Some properties in req.body are missing values."});
+      return
     }
 
     const uploadResult = await fileUpload(imageFile, audioFile);
@@ -71,6 +75,7 @@ export const uploadSong = async (
     const createdSong = await createSong(formInput, imageUrl, audioUrl);
 
     res.status(200).json({ status: "Song created Successfully", message, createdSong});
+    return
   } catch (error) {
     console.error("Error creating song:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -135,7 +140,14 @@ export const removeSong = async (
       return;
     }
     const { songid }: { songid?: string } = req.query;
-    const deleteSong = await Song.findOneAndDelete({ _id: songid }).exec();
+    const searchdeletedSong = await Song.findById(songid)
+    if(searchdeletedSong) {
+    const imageFileUlr = searchdeletedSong.coverImageUrl
+    const audioFileUrl = searchdeletedSong.songDataUrl
+    console.log(imageFileUlr, audioFileUrl)
+    deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr)
+    }
+    const deleteSong = await Song.findOneAndDelete({ _id: songid });
     if (!deleteSong) {
       res.status(404).json({ message: "Song not found" });
       return;

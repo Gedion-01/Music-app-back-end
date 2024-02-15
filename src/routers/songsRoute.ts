@@ -18,7 +18,7 @@ import {
 router.post(
   "/api/v1/uploadSong",
   upload.fields([{ name: "image" }, { name: "audio" }]),
-  fileExtLimiter([".mp3", ".png", ".jpeg"]),
+  fileExtLimiter([".mp3", ".png", ".jpeg", ".jpg"]),
   fileSizeLimiter(3, 10),
   uploadSong
 );

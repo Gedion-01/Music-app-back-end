@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from "express";
 export const fileExtLimiter = (allowedExtArray: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const files: any = req.files;
+    console.log(files)
     const imageFile: any = files["image"] ? files["image"][0] : null;
     const audioFile: any = files["audio"] ? files["audio"][0] : null;
     const invalidFileExtensions = [];

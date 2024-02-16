@@ -24,7 +24,13 @@ router.post(
 );
 router.get("/api/v1/listSongs", listSongs);
 router.get("/api/v1/genre/:genre", songsByGenre);
-router.put("/api/v1/updateSong", updateSong);
+router.put(
+  "/api/v1/updateSong",
+  upload.fields([{ name: "image" }, { name: "audio" }]),
+  fileExtLimiter([".mp3", ".png", ".jpeg", ".jpg"]),
+  fileSizeLimiter(3, 10),
+  updateSong
+);
 router.delete("/api/v1/removeSong", removeSong);
 router.get("/api/v1/searchSong/:id", searchSongById);
 

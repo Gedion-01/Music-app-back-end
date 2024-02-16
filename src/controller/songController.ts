@@ -106,7 +106,8 @@ export const updateSong = async (
       return;
     }
     // my files
-    const files: any = req.files;
+    const files: any = req.files
+    console.log(files)
     if (!files || !files["image"] || !files["audio"]) {
       res.status(400).json({ error: "Image or audio file not provided" });
       return;
@@ -139,7 +140,7 @@ export const updateSong = async (
     //   album,
     //   genre,
     // }: { songid: string, coverImageUrl: string, songDataUrl: string  } & SongRequestBody = req.body;
-
+    console.log(formInput.id)
     const song = await Song.where("_id").equals(formInput.songid);
     // if there is no value break, and return
     if (song.length < 1) {
@@ -153,7 +154,7 @@ export const updateSong = async (
       const imageFileUlr = song[0].coverImageUrl;
       const audioFileUrl = song[0].songDataUrl;
       console.log(imageFileUlr, audioFileUrl);
-      deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr);
+      await deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr);
     }
     const uploadResult = await fileUpload(imageFile, audioFile);
     if (!uploadResult) {
@@ -197,14 +198,13 @@ export const removeSong = async (
       const imageFileUlr = searchdeletedSong.coverImageUrl;
       const audioFileUrl = searchdeletedSong.songDataUrl;
       console.log(imageFileUlr, audioFileUrl);
-      deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr);
+      await deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr);
     }
     const deleteSong = await Song.findOneAndDelete({ _id: songid });
     if (!deleteSong) {
       res.status(404).json({ message: "Song not found" });
       return;
     }
-    //console.log(deleteSong);
 
     res
       .status(200)

@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import Song from "../models/songSchema";
 import { fileUpload } from "../common/firebase/fileUpload";
-import { Multer } from "multer";
 import { deleteFileFromStorageByUrl } from "../common/firebase/deleteFileFormStorageByUrl";
 
 interface SongRequestBody {
@@ -18,7 +17,7 @@ const createSong = async (
   audioUrl: string
 ) => {
   const { title, artist, album, genre } = formInput;
-  console.log(formInput)
+  console.log(formInput);
   try {
     const song = new Song({
       title: title,
@@ -29,7 +28,7 @@ const createSong = async (
       songDataUrl: audioUrl,
     });
     await song.save();
-    return song
+    return song;
   } catch (error) {
     console.log(error);
   }
@@ -40,7 +39,6 @@ export const uploadSong = async (
   res: Response
 ): Promise<void> => {
   try {
-    console.log('here')
     if (!req.body) {
       res.status(400).json({ error: "Request body is missing or empty" });
       return;
@@ -56,13 +54,16 @@ export const uploadSong = async (
     const imageFile = files["image"][0];
     const audioFile = files["audio"][0];
     const formInput: SongRequestBody = req.body;
+    // check if every element in the body has value
     const allValuesPresent = Object.keys(formInput).every((key) => {
       const value = formInput[key];
       return value !== null && value !== undefined && value !== "";
     });
     if (!allValuesPresent) {
-      res.status(400).json({message: "Some properties in req.body are missing values."});
-      return
+      res
+        .status(400)
+        .json({ message: "Some properties in req.body are missing values." });
+      return;
     }
 
     const uploadResult = await fileUpload(imageFile, audioFile);
@@ -74,11 +75,14 @@ export const uploadSong = async (
     const { message, imageUrl, audioUrl } = uploadResult;
     const createdSong = await createSong(formInput, imageUrl, audioUrl);
 
-    res.status(200).json({ status: "Song created Successfully", message, createdSong});
-    return
+    res
+      .status(200)
+      .json({ status: "Song created Successfully", message, createdSong });
+    return;
   } catch (error) {
     console.error("Error creating song:", error);
     res.status(500).json({ error: "Internal Server Error" });
+    return;
   }
 };
 export const listSongs = async (req: Request, res: Response): Promise<void> => {
@@ -89,6 +93,7 @@ export const listSongs = async (req: Request, res: Response): Promise<void> => {
   } catch (error) {
     console.error("Error while fetching songs:", error);
     res.status(500).json({ error: "Internal Server Error" });
+    return;
   }
 };
 export const updateSong = async (
@@ -100,25 +105,70 @@ export const updateSong = async (
       res.status(400).json({ error: "Request body is missing or empty" });
       return;
     }
+    // my files
+    const files: any = req.files;
+    if (!files || !files["image"] || !files["audio"]) {
+      res.status(400).json({ error: "Image or audio file not provided" });
+      return;
+    }
+    const imageFile = files["image"][0];
+    const audioFile = files["audio"][0];
 
-    const {
-      songid,
-      title,
-      artist,
-      album,
-      genre,
-    }: { songid: string } & SongRequestBody = req.body;
-    const song = await Song.where("_id").equals(songid).exec();
+    // body
+    const formInput: SongRequestBody & {
+      songid: string;
+      coverImageUrl: string;
+      songDataUrl: string;
+    } = req.body;
+    // check if every element in the body has value
+    const allValuesPresent = Object.keys(formInput).every((key) => {
+      const value = formInput[key];
+      return value !== null && value !== undefined && value !== "";
+    });
+    if (!allValuesPresent) {
+      res
+        .status(400)
+        .json({ message: "Some properties in req.body are missing values." });
+      return;
+    }
+
+    // const {
+    //   songid,
+    //   title,
+    //   artist,
+    //   album,
+    //   genre,
+    // }: { songid: string, coverImageUrl: string, songDataUrl: string  } & SongRequestBody = req.body;
+
+    const song = await Song.where("_id").equals(formInput.songid);
+    // if there is no value break, and return
     if (song.length < 1) {
       res.status(404).json({
         message: "Can't update the song because the song is not found",
       });
       return;
     }
-    song[0].title = title;
-    song[0].artist = artist;
-    song[0].album = album;
-    song[0].genre = genre;
+    // if we have value, then get the previous file url and then remove the file from the storage.
+    if (song.length > 0) {
+      const imageFileUlr = song[0].coverImageUrl;
+      const audioFileUrl = song[0].songDataUrl;
+      console.log(imageFileUlr, audioFileUrl);
+      deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr);
+    }
+    const uploadResult = await fileUpload(imageFile, audioFile);
+    if (!uploadResult) {
+      res.status(500).json({ message: "File upload failed" });
+      return;
+    }
+    // destruct the uploaded data returned values
+    const { message, imageUrl, audioUrl } = uploadResult;
+    // set the new values
+    song[0].title = formInput.title;
+    song[0].artist = formInput.artist;
+    song[0].album = formInput.album;
+    song[0].genre = formInput.genre;
+    song[0].coverImageUrl = imageUrl
+    song[0].songDataUrl = audioUrl
 
     await song[0].save();
     res.status(200).json({ message: "Song updated Successfully" });
@@ -126,6 +176,7 @@ export const updateSong = async (
   } catch (error) {
     console.error("Error while updating the songs:", error);
     res.status(500).json({ error: "Internal Server Error" });
+    return
   }
 };
 export const removeSong = async (
@@ -140,12 +191,13 @@ export const removeSong = async (
       return;
     }
     const { songid }: { songid?: string } = req.query;
-    const searchdeletedSong = await Song.findById(songid)
-    if(searchdeletedSong) {
-    const imageFileUlr = searchdeletedSong.coverImageUrl
-    const audioFileUrl = searchdeletedSong.songDataUrl
-    console.log(imageFileUlr, audioFileUrl)
-    deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr)
+    const searchdeletedSong = await Song.findById(songid);
+
+    if (searchdeletedSong) {
+      const imageFileUlr = searchdeletedSong.coverImageUrl;
+      const audioFileUrl = searchdeletedSong.songDataUrl;
+      console.log(imageFileUlr, audioFileUrl);
+      deleteFileFromStorageByUrl(audioFileUrl, imageFileUlr);
     }
     const deleteSong = await Song.findOneAndDelete({ _id: songid });
     if (!deleteSong) {
@@ -161,6 +213,7 @@ export const removeSong = async (
   } catch (error) {
     console.error("Error while trying to remove the song:", error);
     res.status(500).json({ error: "Internal Server Error" });
+    return
   }
 };
 
@@ -187,6 +240,7 @@ export const songsByGenre = async (
   } catch (error) {
     console.error("Error while trying to find songs by genre:", error);
     res.status(500).json({ error: "Internal Server Error" });
+    return
   }
 };
 
@@ -206,5 +260,6 @@ export const searchSongById = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error while trying to find songs by genre:", error);
     res.status(500).json({ error: "Internal Server Error" });
+    return
   }
 };

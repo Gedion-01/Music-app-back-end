@@ -7,5 +7,4 @@ export const upload = multer({
     storage: storage,
     limits: {fileSize: maxSize}
 })
-console.log('here');
 

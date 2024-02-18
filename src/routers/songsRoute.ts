@@ -19,6 +19,7 @@ router.post(
   "/api/v1/uploadSong",
   upload.fields([{ name: "image" }, { name: "audio" }]),
   fileExtLimiter([".mp3", ".png", ".jpeg", ".jpg"]),
+  // for image & audio in MB.
   fileSizeLimiter(3, 10),
   uploadSong
 );

@@ -19,36 +19,16 @@ if (!DB_URL) {
     process.exit(1);
 }
 const options = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  keepAlive: true,
-  keepAliveInitialDelay: 300000,
-  autoReconnect: true,
+  reconnectInterval: 10000,
   reconnectTries: Number.MAX_VALUE,
-  reconnectInterval: 5000
 };
-
-mongoose.connection.on('connected', () => {
-  console.log('Mongoose connected to MongoDB');
-});
-
-mongoose.connection.on('error', (err) => {
-  console.error('Mongoose connection error:', err.message);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('Mongoose disconnected from MongoDB');
-});
-
-mongoose.connection.on('reconnected', () => {
-  console.log('Mongoose reconnected to MongoDB');
-});
   
-mongoose.connect(DB_URL, options).then(() => {
+mongoose.connect(DB_URL, {
+  serverSelectionTimeoutMS: 500000,
+}).then(() => {
 	console.log("connected");
 });
+
 import songsRoute from "./routers/songsRoute"
 import staticsRoute from "./routers/statisticsRoute"
 

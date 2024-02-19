@@ -56,3 +56,4 @@ A web application for streaming and enjoying music.
 - Update songs
 - Remove song
 - Search for song
+- It can return statistical data like number of songs, artists, genres ETC..

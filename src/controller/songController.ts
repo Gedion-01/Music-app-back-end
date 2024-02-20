@@ -57,6 +57,9 @@ export const uploadSong = async (
     // check if every element in the body has value
     const allValuesPresent = Object.keys(formInput).every((key) => {
       const value = formInput[key];
+      if(key === 'album'){
+        return true
+      }
       return value !== null && value !== undefined && value !== "";
     });
     if (!allValuesPresent) {
@@ -124,6 +127,9 @@ export const updateSong = async (
     // check if every element in the body has value
     const allValuesPresent = Object.keys(formInput).every((key) => {
       const value = formInput[key];
+      if(key === 'album'){
+        return true
+      }
       return value !== null && value !== undefined && value !== "";
     });
     if (!allValuesPresent) {

@@ -59,6 +59,11 @@ export const totalNumberofAlbums = async (req: Request, res: Response) => {
   try {
     const totalAlbums = await Song.aggregate([
       {
+        $match: {
+          album: { $ne: "" } // Exclude documents with empty string albums
+        }
+      },
+      {
         $group: {
           _id: null,
           uniqueAlbums: { $addToSet: "$album" },
@@ -143,7 +148,14 @@ export const numberOfSongsAndAlbumsByArtist = async (
         $group: {
           _id: '$artist',
           totalSongs: { $sum: 1 },
-          albums: { $addToSet: '$album' },
+          totalAlbums: {
+            $sum: { $cond: [{ $eq: ['$album', ""] }, 0, 1] }
+          },
+          albums: { 
+            $addToSet: {
+              $cond: [{ $eq: ['$album', ''] }, null, '$album']
+            } 
+          },
           songs: { $push: { title: '$title', genre: '$genre' } }
         }
       },
@@ -168,6 +180,11 @@ export const numberOfSongsAndAlbumsByArtist = async (
 export const numberOfSongsPerAlbum = async (req: Request, res: Response) => {
   try {
     const result = await Song.aggregate([
+      {
+        $match: {
+          album: { $ne: "" } // Exclude documents with empty string albums
+        }
+      },
       {
         $group: {
           _id: '$album',

@@ -236,9 +236,9 @@ export const songsByGenre = async (
     }
     const { genre }: { genre?: string } = req.params;
 
-    const songsByGenre = await Song.find({ genre: genre }).exec();
+    const songsByGenre = await Song.find({ genre: genre })
     if (songsByGenre.length === 0) {
-      res.status(404).json({ message: "Song not found" });
+      res.status(200).json({ message: "Song not found", songs: [] });
       return;
     }
     res.status(200).json({ message: "Songs found", songs: songsByGenre });

@@ -1,6 +1,6 @@
 # Music App Backend
 
-A Back-end fo web application for streaming and enjoying music.
+A Back-end for web application for streaming, playing and enjoying music.
 
 ## Installation
 
